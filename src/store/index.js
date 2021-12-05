@@ -30,10 +30,12 @@ export default createStore({
 		},
 
 		async register({ commit }, payload) {
+			const avatar = payload.name[0];
+			payload = {...payload, avatar: avatar}
 			const res = await axios.post(`${api}/users`, payload, {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			commit("SET_USER", res.data[0]);
+			commit("SET_USER", res.data);
 		},
 
 		signOut({ commit }) {
