@@ -81,7 +81,7 @@ export default {
 		async uploadPhoto() {
 			// *get random photo from unsplash
 			const resp = await fetch(
-				"https://source.unsplash.com/random/1600x900/?landscape"
+				"https://source.unsplash.com/random/1600x900/?landscape/?city/?restaurant"
 			);
 			// *register the activity
 			const activity = {

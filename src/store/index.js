@@ -10,7 +10,7 @@ const headerConfig = {
 };
 export default createStore({
 	state: {
-		user: null,
+		user: undefined,
 	},
 
 	plugins: [createPersistedState()],
@@ -20,7 +20,7 @@ export default createStore({
 			state.user = payload;
 		},
 		REMOVE_USER(state) {
-			state.user = null;
+			state.user = undefined;
 		},
 	},
 	actions: {

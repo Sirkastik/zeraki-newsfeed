@@ -33,7 +33,11 @@
 		</div>
 	</div>
 	<div class="comment-box" v-else>
-		<comments-div :comments="currentActivity.comments" @hideBox="showBox = false" @sendComment="sendComment" />
+		<comments-div
+			:comments="currentActivity.comments"
+			@hideBox="showBox = false"
+			@sendComment="sendComment"
+		/>
 	</div>
 </template>
 
@@ -112,7 +116,7 @@ export default {
 				content: activity.content,
 				date: Date.now(),
 				likes: [],
-				comments: []
+				comments: [],
 			};
 
 			if ("link" in newAct) {
@@ -139,7 +143,7 @@ export default {
 				comment: text,
 			};
 			let newData = { ...this.currentActivity };
-			newData.comments.push(comment)
+			newData.comments.push(comment);
 
 			// *updating the data to add new comment
 			try {
@@ -151,6 +155,8 @@ export default {
 			} catch (error) {
 				console.error(`Error: ${error}`);
 			}
+			// *hide comment box
+			this.showBox = false;
 
 			// *setting the pronoun of the activity
 			let pronoun;
@@ -172,7 +178,7 @@ export default {
 				text: comment.comment,
 				date: Date.now(),
 				likes: [],
-				comments: []
+				comments: [],
 			};
 
 			// *register the COMMENT activity
@@ -183,8 +189,6 @@ export default {
 			} catch (error) {
 				console.error(`Error: ${error}`);
 			}
-			// *hide comment box
-			this.showBox = false;
 		},
 	},
 };
