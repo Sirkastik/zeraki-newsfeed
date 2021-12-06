@@ -24,7 +24,6 @@ export default {
 	data() {
 		return {
 			activities: [],
-			showSB: false,
 		};
 	},
 
@@ -34,19 +33,12 @@ export default {
 			`${api}/activities?subject=${this.userName}&_sort=id&_order=DESC`,
 			headerConfig
 		);
-		const data = res.data;
-		this.activities = [...data];
+		this.activities = [...res.data];
 	},
 
 	computed: {
 		userName() {
 			return this.$route.params.id;
-		},
-		user() {
-			return this.$store.state.user;
-		},
-		pronoun() {
-			return this.user.gender === "M" ? "his" : "her";
 		},
 	},
 
