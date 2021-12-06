@@ -3,7 +3,11 @@ import axios from "axios";
 import createPersistedState from "vuex-persistedstate";
 const api = "https://mock-json-server-service.herokuapp.com";
 const token = "fks8KAdwj0cnaXs";
-
+const headerConfig = {
+	headers: {
+		Authorization: `Bearer ${token}`,
+	},
+};
 export default createStore({
 	state: {
 		user: null,
@@ -21,21 +25,34 @@ export default createStore({
 	},
 	actions: {
 		async login({ commit }, payload) {
-			const res = await axios.get(`${api}/users?name=${payload.name}`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			commit("SET_USER", res.data[0]);
+			try {
+				const res = await axios.get(
+					`${api}/users?name=${payload.name}&&password=${payload.password}`,
+					headerConfig
+				);
+				console.info(
+					`Info: Login succesful \nCurrent user: ${res.data[0].name}`
+				);
+				commit("SET_USER", res.data[0]);
+			} catch (error) {
+				alert(
+					"An error occured, please check your login details and try again!"
+				);
+				console.error(`Error: ${error}`);
+			}
 		},
 
 		async register({ commit }, payload) {
-			const avatar = payload.name[0];
-			payload = {...payload, avatar: avatar}
-			const res = await axios.post(`${api}/users`, payload, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
-			commit("SET_USER", res.data);
+			try {
+				const avatar = payload.name[0];
+				payload = { ...payload, avatar: avatar };
+				const res = await axios.post(`${api}/users`, payload, headerConfig);
+				console.info(`Info: Signup succesful \nCurrent user: ${res.data.name}`);
+				commit("SET_USER", res.data);
+			} catch (error) {
+				alert("An error occured, please try again!");
+				console.error(`Error: ${error}`);
+			}
 		},
 
 		signOut({ commit }) {

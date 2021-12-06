@@ -4,7 +4,7 @@
 
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
-
+/* CSS reset so as to start my own styling */
 /* Remove all the styles of the "User-Agent-Stylesheet", except for the 'display' property */
 *:where(:not(iframe, canvas, img, svg, video):not(svg *)) {
 	all: unset;
@@ -49,6 +49,10 @@ body {
 	background: white;
 }
 
+/* 
+	*TODO: Dark mode 
+*/
+
 /* .dark {
 	--bg: #0f0e17;
 	--headline: #fffffe;
@@ -68,7 +72,7 @@ body {
 	color: var(--paragraph);
 } */
 
-*{
+* {
 	--bg: rgba(243, 244, 246, 1);
 	--color: rgba(6, 78, 59, 1);
 	--btn_bg: rgba(52, 211, 153, 1);

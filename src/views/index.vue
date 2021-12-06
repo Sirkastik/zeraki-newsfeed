@@ -1,15 +1,9 @@
+// *This is the homepage
 <template>
 	<div class="container">
-		<div
-			class="box border border-gray-100 rounded shadow-lg flex flex-col items-center gap-8 py-10 px-6"
-		>
+		<div class="box">
 			<h1>Welcome to NewsFeed 1.0</h1>
-			<button
-				@click="$router.push('/feed')"
-				class="bg-green-400 text-white font-bold hover:shadow-lg"
-			>
-				Go to app
-			</button>
+			<button @click="$router.push('/feed')">Go to app</button>
 		</div>
 	</div>
 </template>
@@ -54,10 +48,13 @@ button {
 }
 
 button:hover {
-  	--shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+	--shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 		0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-@media screen and (min-width: 680px) {
+@media screen and (min-width: 800px) {
+	.box {
+		padding: 4rem 6rem;
+	}
 }
 </style>

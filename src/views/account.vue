@@ -13,6 +13,29 @@
 					required
 				/>
 			</div>
+			<div class="contents radio" v-if="!signIn">
+				<!-- *Show this input box only when the user is signing up -->
+				<label>
+					Male
+					<input
+						type="radio"
+						name="gender"
+						value="M"
+						v-model="gender"
+						required
+					/>
+				</label>
+				<label>
+					Female
+					<input
+						type="radio"
+						name="gender"
+						value="F"
+						v-model="gender"
+						required
+					/>
+				</label>
+			</div>
 			<div class="contents">
 				<input
 					placeholder="Password"
@@ -22,6 +45,7 @@
 				/>
 			</div>
 			<div class="contents">
+				<!-- *Show this input box only when the user is signing up -->
 				<input
 					v-if="!signIn"
 					placeholder="Confirm password"
@@ -38,30 +62,35 @@
 
 <script>
 export default {
+	// this is reactive data for my component/page
 	data() {
 		return {
 			username: "",
 			password: "",
 			passConfirm: "",
+			gender: undefined,
 			signIn: true,
 		};
 	},
+
 	methods: {
 		async handleSubmit() {
 			const creds = {
 				name: this.username,
-				password: this.password
-			}
+				password: this.password,
+				gender: this.gender,
+			};
 			let err = this.validate();
-			if (err) alert(err);
-			else {
-				if (this.signIn)
-				await this.$store.dispatch('login', creds);
-				else
-				await this.$store.dispatch('register', creds);
-
-			this.$router.push("/feed");
-
+			if (err) {
+				alert(err);
+				console.error(`Error: ${err}`);
+			} else {
+				if (this.signIn) {
+					await this.$store.dispatch("login", creds);
+				} else {
+					await this.$store.dispatch("register", creds);
+				}
+				this.$router.push("/feed");
 			}
 		},
 
@@ -118,6 +147,11 @@ form {
 	display: contents;
 }
 
+.radio {
+	display: flex;
+	justify-content: space-around;
+}
+
 input {
 	outline: none;
 	padding: 0.75rem 1rem;
@@ -135,6 +169,10 @@ input:focus {
 		var(--ring-color);
 	box-shadow: var(--ring-offset-shadow), var(--ring-shadow),
 		var(--shadow, 0 0 #0000);
+}
+
+input[type="radio"] {
+	all: revert;
 }
 
 button {

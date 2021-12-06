@@ -1,46 +1,31 @@
 <template>
 	<div class="container">
-		<div
-			class="sidebar"
-			:class="{
-				'mobileSB sb': smScreen && show,
-				'hidden sb': smScreen && !show,
-			}"
-		>
-			<h1>
-				<span> <i class="icon ion-md-people"></i><span>Friends</span> </span>
-				<span :class="{ 'hidden mobile': !smScreen }" @click="show = false">
-					<i class="icon ion-md-close-circle-outline"></i>
-				</span>
-			</h1>
-			<div class="frndlist">
-				<div
-					v-for="(friend, index) in friends"
-					:key="index"
-					@click="$router.push(`/users/${friend.name}`)"
-					class="friend"
-				>
-					<span class="avatar">{{ friend.avatar }}</span>
-					<span class="">{{ friend.name }}</span>
-				</div>
-			</div>
-			<button @click="signout">Sign out</button>
-		</div>
+		<side-bar v-show="!smScreen || showSB" @hideSB="show = false" />
 		<div class="main" v-show="!smScreen || !show">
 			<div class="top">
-				<i class="icon ion-md-people" v-if="smScreen" @click="this.show = true"></i>
+				<i
+					class="icon ion-md-people"
+					v-if="smScreen"
+					@click="this.show = true"
+				></i>
 				<div class="upload">
 					<input
 						type="text"
 						placeholder="Type your status here"
 						v-model="status"
 					/>
-					<span @click="uploadPhoto" title="Upload Photo"><i class="icon ion-md-photos"></i></span>
+					<span @click="uploadPhoto" title="Upload Photo">
+						<i class="icon ion-md-photos"></i>
+					</span>
 					<span :class="{ active: status !== '' }" @click="updateStatus">
 						<i class="icon ion-md-send"></i>
 					</span>
 				</div>
-				<i class="icon ion-md-contact" @click="updateProfile" title="Update Profile Photo"></i>
+				<i
+					class="icon ion-md-contact"
+					@click="updateProfile"
+					title="Update Profile Photo"
+				></i>
 			</div>
 			<activities-div :activities="feed" @feed="updateData" />
 		</div>
@@ -50,10 +35,14 @@
 <script>
 const api = "https://mock-json-server-service.herokuapp.com";
 const token = "fks8KAdwj0cnaXs";
+const headerConfig = {
+	headers: { Authorization: `Bearer ${token}` },
+};
 import axios from "axios";
 import activitiesDiv from "../components/activities.vue";
+import sideBar from "../components/sidebar.vue";
 export default {
-	components: { activitiesDiv },
+	components: { activitiesDiv, sideBar },
 	data() {
 		return {
 			friends: [],
@@ -64,19 +53,21 @@ export default {
 	},
 
 	async created() {
-		const res = await axios.get(`${api}/activities?_sort=id&_order=DESC`);
-		const resp = await axios.get(`${api}/users?_sort=id`, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
-		const users = resp.data;
-		this.friends = [...users];
-		const data = res.data;
+		// fetch activities and sort them by id
+		const feed_res = await axios.get(
+			`${api}/activities?_sort=id&_order=DESC`,
+			headerConfig
+		);
+		const data = feed_res.data;
 		this.feed = [...data];
 	},
 
 	computed: {
 		smScreen() {
 			return window.innerWidth < 800;
+		},
+		showSB() {
+			return this.smScreen && this.show;
 		},
 		user() {
 			return this.$store.state.user;
@@ -87,48 +78,51 @@ export default {
 	},
 
 	methods: {
-		signout() {
-			this.$router.push("/");
-			this.$store.dispatch("signOut");
-		},
 		async uploadPhoto() {
+			// *get random photo from unsplash
 			const resp = await fetch(
 				"https://source.unsplash.com/random/1600x900/?landscape"
 			);
+			// *register the activity
 			const activity = {
 				subject: this.user.name,
 				action: "uploaded",
 				pronoun: "a",
 				object: "new photo",
-				content: "photo",
 				link: resp.url,
 				date: Date.now(),
 				likes: [],
+				comments: [],
 			};
-			const res = await axios.post(`${api}/activities`, activity);
+			const res = await axios.post(`${api}/activities`, activity, headerConfig);
+			// *display the new activity
 			this.feed.unshift(res.data);
 		},
+
 		async updateProfile() {
+			// *get profile for user depending on their gender
 			const query = this.pronoun === "his" ? "man" : "woman";
-			const resp = await fetch(
+			const photo_res = await fetch(
 				`https://source.unsplash.com/random/1600x900/?${query}?face`
 			);
+			// *register activity
 			const activity = {
 				subject: this.user.name,
 				action: "updated",
 				pronoun: this.pronoun,
 				object: "profile photo",
-				content: "photo",
-				link: resp.url,
+				link: photo_res.url,
 				date: Date.now(),
 				likes: [],
+				comments: []
 			};
-			const res = await axios.post(`${api}/activities`, activity, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const res = await axios.post(`${api}/activities`, activity, headerConfig);
+			// *display the activity
 			this.feed.unshift(res.data);
 		},
+
 		async updateStatus() {
+			// *register new activity
 			const activity = {
 				subject: this.user.name,
 				action: "updated",
@@ -138,16 +132,18 @@ export default {
 				text: this.status,
 				date: Date.now(),
 				likes: [],
+				comments: []
 			};
-			const res = await axios.post(`${api}/activities`, activity, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const res = await axios.post(`${api}/activities`, activity, headerConfig);
+			// *display the new activity
 			this.feed.unshift(res.data);
+			// *reset the status input
 			this.status = "";
 		},
+		// *method to update the feeds when child component emits a new activity
 		updateData(data) {
-			this.feed.unshift(data)
-		}
+			this.feed.unshift(data);
+		},
 	},
 };
 </script>
@@ -156,90 +152,6 @@ export default {
 .container {
 	width: 100vw;
 	min-height: 100vh;
-}
-
-.sidebar {
-	width: 25%;
-	min-width: 15rem;
-	padding: 0.75rem;
-	padding-bottom: 2rem;
-	text-align: center;
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.hidden {
-	display: none;
-}
-
-.mobileSB {
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	z-index: 10;
-}
-
-.sidebar > h1 {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 1rem;
-	border: 1px solid var(--bg);
-	font-size: 1.25rem;
-	font-weight: 700;
-	border-radius: 0.25rem;
-	box-shadow: var(--ring-offset-shadow, 0 0 #0000),
-		var(--ring-shadow, 0 0 #0000), var(--shadow);
-}
-
-.sidebar > h1 .icon {
-	font-size: 1.5rem;
-}
-
-.sidebar > h1 > span:nth-child(1) {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.frndlist {
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	padding: 1rem 0;
-}
-
-.friend {
-	cursor: pointer;
-	display: flex;
-	gap: 0.5rem;
-	align-items: center;
-	background: var(--bg);
-	box-shadow: var(--shadow);
-	padding: 0.75rem;
-	border-radius: 0.25rem;
-}
-
-.friend > .avatar {
-	border-radius: 50%;
-	padding: 0.4rem 0.75rem;
-	background: var(--color);
-	color: var(--bg);
-	font-weight: 600;
-	text-transform: uppercase;
-	font-size: 1.2rem;
-}
-
-.sidebar button {
-	font-weight: 700;
-	padding: 0.5rem 1rem;
-	background: var(--color);
-	color: var(--bg);
-	text-align: center;
-	border-radius: 0.25rem;
-	box-shadow: var(--shadow);
 }
 
 .main {
@@ -299,20 +211,20 @@ input:focus {
 }
 
 @media screen and (min-width: 800px) {
-    .container {
-        display: flex;
-    }
+	.container {
+		display: flex;
+	}
 
 	.top > .upload {
 		flex: 1;
 		padding-left: 35%;
 	}
 	.top > .upload input {
-		padding-right: 6rem;
+		width: 45%;
 	}
 
 	.main {
-		width: 100%;
+		flex-grow: 1;
 	}
 }
 </style>

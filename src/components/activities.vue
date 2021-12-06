@@ -1,18 +1,18 @@
 <template>
 	<div class="activities" v-if="!showBox">
 		<div v-for="(activity, index) in activities" :key="index" class="activity">
-			<div class="content" v-if="activity.content === 'text'">
+			<div class="content" v-if="'text' in activity">
 				{{ activity.text }}
 			</div>
-			<div class="photo" v-if="activity.content === 'photo'">
+			<div class="photo" v-if="'link' in activity">
 				<img :src="activity.link" alt="image" />
 			</div>
 			<div class="act-feed">
 				<span class="bold">{{ activity.subject }} </span>
-				<span class="small"
-					>{{ activity.action }} {{ activity.pronoun }}
-					{{ activity.object }}</span
-				>
+				<span class="small">
+					{{ activity.action }} {{ activity.pronoun }}
+					{{ activity.object }}
+				</span>
 			</div>
 			<div class="btns">
 				<button @click="like(activity)">
@@ -33,35 +33,26 @@
 		</div>
 	</div>
 	<div class="comment-box" v-else>
-		<span @click="showBox = false">
-			<i class="icon ion-md-close-circle-outline"></i>
-		</span>
-		<textarea
-			placeholder="Enter you comment here"
-			v-model="comment"
-			cols="30"
-			rows="10"
-		></textarea>
-		<span :class="{ active: comment !== '' }" @click="sendComment">
-			<span>Send</span><i class="icon ion-md-send"></i>
-		</span>
-
-		<div class="comments"></div>
+		<comments-div :comments="currentActivity.comments" @hideBox="showBox = false" @sendComment="sendComment" />
 	</div>
 </template>
 
 <script>
 const api = "https://mock-json-server-service.herokuapp.com";
 const token = "fks8KAdwj0cnaXs";
+const headerConfig = {
+	headers: { Authorization: `Bearer ${token}` },
+};
 import axios from "axios";
+import commentsDiv from "./comments.vue";
 export default {
+	components: { commentsDiv },
 	props: {
 		activities: Array,
 	},
 
 	data() {
 		return {
-			comment: "",
 			showBox: false,
 			currentActivity: null,
 		};
@@ -80,19 +71,29 @@ export default {
 	},
 
 	methods: {
+		// *set the current activity and show comment box
 		commentHere(activity) {
 			this.showBox = true;
 			this.currentActivity = activity;
 		},
 
 		async like(activity) {
+			// *reject if user has already liked
 			if (activity.likes.includes(this.user.name)) return;
 			let newData = { ...activity };
 			newData.likes.push(this.user.name);
-			await axios.put(`${api}/activities/${activity.id}`, newData, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			// *add like to activity
+			try {
+				await axios.put(
+					`${api}/activities/${activity.id}`,
+					newData,
+					headerConfig
+				);
+			} catch (error) {
+				console.error(`Error: ${error}`);
+			}
 
+			// *set the pronoun
 			let pronoun;
 			if (activity.subject === this.user.name) {
 				pronoun = this.pronoun;
@@ -102,6 +103,7 @@ export default {
 				pronoun += "'s";
 			}
 
+			// *register the LIKE activity
 			let newAct = {
 				subject: this.user.name,
 				action: "liked",
@@ -110,34 +112,47 @@ export default {
 				content: activity.content,
 				date: Date.now(),
 				likes: [],
+				comments: []
 			};
 
-			if (activity.content === "photo") {
+			if ("link" in newAct) {
 				newAct = { ...newAct, link: activity.link };
 			} else {
 				newAct = { ...newAct, text: activity.text };
 			}
 
-			const res = await axios.post(`${api}/activities`, newAct, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
-			this.$emit("feed", res.data);
+			try {
+				const res = await axios.post(`${api}/activities`, newAct, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				// *send data to parent component
+				this.$emit("feed", res.data);
+			} catch (error) {
+				console.error(`Error: ${error}`);
+			}
 		},
-		async sendComment() {
+
+		async sendComment(text) {
+			// *function receives text(comment) from child component
 			let comment = {
 				user: this.user.name,
-				comment: this.comment,
+				comment: text,
 			};
 			let newData = { ...this.currentActivity };
-			if ("comments" in this.currentActivity) {
-				newData.comments.push(comment);
-			} else {
-				newData = { ...newData, comments: [comment] };
-			}
-			await axios.put(`${api}/activities/${this.currentActivity.id}`, newData, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			newData.comments.push(comment)
 
+			// *updating the data to add new comment
+			try {
+				await axios.put(
+					`${api}/activities/${this.currentActivity.id}`,
+					newData,
+					headerConfig
+				);
+			} catch (error) {
+				console.error(`Error: ${error}`);
+			}
+
+			// *setting the pronoun of the activity
 			let pronoun;
 			if (this.currentActivity.subject === this.user.name) {
 				pronoun = this.pronoun;
@@ -154,16 +169,21 @@ export default {
 				action: "commented on",
 				pronoun: pronoun,
 				object: this.currentActivity.object,
-				content: "text",
-				text: this.comment,
+				text: comment.comment,
 				date: Date.now(),
 				likes: [],
+				comments: []
 			};
 
-			const res = await axios.post(`${api}/activities`, newAct, {
-				headers: { Authorization: `Bearer ${token}` },
-			});
-			this.$emit("feed", res.data);
+			// *register the COMMENT activity
+			try {
+				const res = await axios.post(`${api}/activities`, newAct, headerConfig);
+				// *send data to parent component
+				this.$emit("feed", res.data);
+			} catch (error) {
+				console.error(`Error: ${error}`);
+			}
+			// *hide comment box
 			this.showBox = false;
 		},
 	},
@@ -180,39 +200,6 @@ export default {
 	flex-direction: column;
 	padding: 1rem;
 	gap: 1rem;
-}
-
-.comment-box > span {
-	display: flex;
-	gap: 0.5rem;
-	justify-content: center;
-	align-items: center;
-	background: var(--color);
-	border-radius: 0.25rem;
-	padding: 0.5rem 0;
-}
-
-.comment-box > span > * {
-	color: var(--bg);
-}
-
-textarea {
-	outline: none;
-	padding: 0.75rem 1rem;
-	border-radius: 0.2rem;
-	background: var(--bg);
-	box-shadow: var(--ring-offset-shadow, 0 0 #0000),
-		var(--ring-shadow, 0 0 #0000), var(--inset-shadow);
-}
-
-textarea:focus {
-	--ring-inset: inset;
-	--ring-offset-shadow: var(--ring-inset) 0 0 0 var(--ring-offset-width)
-		var(--ring-offset-color);
-	--ring-shadow: var(--ring-inset) 0 0 0 calc(3px + var(--ring-offset-width))
-		var(--ring-color);
-	box-shadow: var(--ring-offset-shadow), var(--ring-shadow),
-		var(--shadow, 0 0 #0000);
 }
 
 .activities {

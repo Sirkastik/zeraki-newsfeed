@@ -6,13 +6,16 @@
 			</button>
 			<div class="title">{{ userName }}'s Activities</div>
 		</div>
-		<activities-div :activities="activities" @feed="updateData"/>
+		<activities-div :activities="activities" @feed="updateData" />
 	</div>
 </template>
 
 <script>
 const api = "https://mock-json-server-service.herokuapp.com";
 const token = "fks8KAdwj0cnaXs";
+const headerConfig = {
+	headers: { Authorization: `Bearer ${token}` },
+};
 import axios from "axios";
 import activitiesDiv from "../components/activities.vue";
 export default {
@@ -25,20 +28,11 @@ export default {
 		};
 	},
 
-	computed: {
-		smScreen() {
-			return window.innerWidth < 800;
-		},
-	},
-
 	async created() {
+		// *fetch activities
 		const res = await axios.get(
 			`${api}/activities?subject=${this.userName}&_sort=id&_order=DESC`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
+			headerConfig
 		);
 		const data = res.data;
 		this.activities = [...data];
@@ -57,6 +51,7 @@ export default {
 	},
 
 	methods: {
+		// *method to update the feeds when child component emits a new activity
 		updateData(data) {
 			this.activities.unshift(data);
 		},
